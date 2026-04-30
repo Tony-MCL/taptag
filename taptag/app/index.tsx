@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "expo-router";
 
 import {
@@ -10,12 +10,38 @@ import {
 } from "../src/services/taptagService";
 
 import { store } from "../src/data/store";
+import { loadFullArrangor } from "../src/services/firestoreService";
 
 export default function Home() {
   const [, forceUpdate] = useState(0);
-  const [status, setStatus] = useState("Klar");
+  const [status, setStatus] = useState("Laster data...");
 
   const refresh = () => forceUpdate((n) => n + 1);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        if (!store.arrangor) {
+          setStatus("Ingen arrangør valgt");
+          return;
+        }
+
+        const data = await loadFullArrangor(store.arrangor.arrangorId);
+
+        store.produkter = data.produkter as any;
+        store.kort = data.kort as any;
+        store.transaksjoner = data.transaksjoner as any;
+
+        setStatus("Data lastet");
+        refresh();
+      } catch (error) {
+        setStatus("Kunne ikke laste data");
+        console.error(error);
+      }
+    };
+
+    load();
+  }, []);
 
   const handleSetup = () => {
     try {
@@ -24,7 +50,7 @@ export default function Home() {
       leggTilProdukt("Vin", 2);
       leggTilProdukt("Shot", 1);
 
-      setStatus("Event opprettet");
+      setStatus("Event opprettet og lagret");
       refresh();
     } catch (error) {
       setStatus("Feil ved setup");
@@ -35,7 +61,7 @@ export default function Home() {
   const handleNewCard = () => {
     try {
       opprettKort("Tony");
-      setStatus("Kort opprettet");
+      setStatus("Kort opprettet og lagret");
       refresh();
     } catch (error) {
       setStatus("Feil ved kort");
@@ -54,7 +80,7 @@ export default function Home() {
       }
 
       kjøp(card.cardId, [product.productId]);
-      setStatus("Kjøp gjennomført");
+      setStatus("Kjøp gjennomført og lagret");
       refresh();
     } catch (error) {
       setStatus("Feil ved kjøp");

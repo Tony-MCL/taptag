@@ -1,9 +1,16 @@
 import { store } from "../data/store";
 import { Arrangor, Produkt, Kort, Transaksjon } from "../types/taptag";
 
+import {
+  saveArrangor,
+  saveProdukt,
+  saveKort,
+  saveTransaksjon,
+} from "./firestoreService";
+
 export function opprettArrangor(navn: string): Arrangor {
   const arrangor: Arrangor = {
-    arrangorId: Date.now().toString(),
+    arrangorId: store.arrangor?.arrangorId || "taptag-test",
     navn,
     modus: "arrangement",
     aktiv: true,
@@ -13,6 +20,8 @@ export function opprettArrangor(navn: string): Arrangor {
   store.produkter = [];
   store.kort = [];
   store.transaksjoner = [];
+
+  saveArrangor(arrangor);
 
   return arrangor;
 }
@@ -28,6 +37,8 @@ export function leggTilProdukt(navn: string, pris: number): Produkt {
   };
 
   store.produkter.push(produkt);
+  saveProdukt(produkt);
+
   return produkt;
 }
 
@@ -42,6 +53,8 @@ export function opprettKort(alias: string): Kort {
   };
 
   store.kort.push(kort);
+  saveKort(kort);
+
   return kort;
 }
 
@@ -63,7 +76,6 @@ export function kjøp(cardId: string, productIds: string[]): Transaksjon {
     throw new Error("Ikke nok saldo");
   }
 
-  const balanceBefore = kort.saldo;
   kort.saldo -= total;
 
   const transaksjon: Transaksjon = {
@@ -79,6 +91,9 @@ export function kjøp(cardId: string, productIds: string[]): Transaksjon {
   };
 
   store.transaksjoner.push(transaksjon);
+
+  saveKort(kort);
+  saveTransaksjon(transaksjon);
 
   return transaksjon;
 }

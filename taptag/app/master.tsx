@@ -1,42 +1,46 @@
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useState } from "react";
-import { kjøp } from "../src/services/taptagService";
-import { store } from "../src/data/store";
+
+import Bartender from "../src/screens/master/BartenderScreen";
+import Admin from "../src/screens/admin/AdminScreen";
+import Setup from "../src/screens/setup/SetupScreen";
+import { useTaptagLiveSync } from "../src/hooks/useTaptagLiveSync";
 
 export default function Master() {
-  const [status, setStatus] = useState("Klar");
+  const [mode, setMode] = useState<"menu" | "admin" | "bartender" | "setup">(
+    "menu"
+  );
 
-  const fakeScan = () => {
-    const scannedCardId = store.kort[0]?.cardId;
+  const { syncStatus, syncTick } = useTaptagLiveSync();
 
-    if (!scannedCardId) {
-      setStatus("Ingen kort å scanne");
-      return;
-    }
+  if (mode === "admin") {
+    return <Admin onBack={() => setMode("menu")} syncTick={syncTick} />;
+  }
 
-    const product = store.produkter[0];
+  if (mode === "bartender") {
+    return <Bartender onBack={() => setMode("menu")} syncTick={syncTick} />;
+  }
 
-    if (!product) {
-      setStatus("Ingen produkter");
-      return;
-    }
-
-    try {
-      kjøp(scannedCardId, [product.productId]);
-      setStatus("Salg OK");
-    } catch (e: any) {
-      setStatus(e.message);
-    }
-  };
+  if (mode === "setup") {
+    return <Setup onBack={() => setMode("menu")} />;
+  }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Bartender</Text>
-      <Text style={styles.status}>{status}</Text>
+      <Text style={styles.title}>TapTag Master</Text>
+      <Text style={styles.status}>{syncStatus}</Text>
 
-      <Pressable style={styles.button} onPress={fakeScan}>
-        <Text style={styles.buttonText}>Scan (fake)</Text>
-      </Pressable>
+      <TouchableOpacity style={styles.button} onPress={() => setMode("bartender")}>
+        <Text style={styles.buttonText}>Bartender</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.button} onPress={() => setMode("admin")}>
+        <Text style={styles.buttonText}>Admin</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.button} onPress={() => setMode("setup")}>
+        <Text style={styles.buttonText}>Oppsett</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -50,19 +54,26 @@ const styles = StyleSheet.create({
   },
   title: {
     color: "#FFF",
-    fontSize: 28,
-    marginBottom: 10,
+    fontSize: 32,
+    fontWeight: "700",
+    marginBottom: 8,
   },
   status: {
     color: "#7CFF9B",
-    marginBottom: 20,
+    marginBottom: 26,
   },
   button: {
     backgroundColor: "#1E2A36",
-    padding: 16,
-    borderRadius: 10,
+    paddingVertical: 18,
+    paddingHorizontal: 40,
+    borderRadius: 14,
+    marginBottom: 16,
+    minWidth: 220,
+    alignItems: "center",
   },
   buttonText: {
     color: "#FFF",
+    fontSize: 18,
+    fontWeight: "700",
   },
 });
